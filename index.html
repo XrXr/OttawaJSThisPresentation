@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Demystifying "this"</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <script type="text/javascript" src="https://fb.me/react-with-addons-0.14.0.js"></script>
+    <script type="text/javascript" src="https://fb.me/react-dom-0.14.0.js"></script>
+  </head>
+
+  <body>
+    <textarea id="source">
+class: center, middle
+
+# Demystifying `this`
+
+Alan Wu
+
+---
+
+.left-column[
+## Why should you care?
+]
+
+.right-column[
+- A fundemental mechanism in JavaScript
+- Widely used in APIs
+]
+
+---
+
+.left-column[
+## Why should you care?
+]
+
+.right-column[
+- A fundemental mechanism in JavaScript
+- Widely used in APIs
+- Save you from potential embarrassment
+
+![Invalid bug report](bug-report.jpg)
+]
+
+???
+
+Might also save hours of debugging
+
+---
+
+.left-column[
+### Outside of function
+]
+
+.right-column[
+- Always returns the global object
+- Works in both strict mode and non-strict mode
+
+```js
+// browser
+this === window  // true
+
+// node
+this === global  // true
+```
+]
+
+???
+
+Mention `window` and `global` are optional properties on the global object, while `this` outside of function is mandatory
+
+---
+.left-column[
+#### Outside of function
+### Simple function call
+]
+
+.right-column[
+- The global object in non-strict mode
+- `undefined` in strict mode
+
+```js
+function a () {
+  return this;
+}
+
+a() === window;  // true
+```
+
+
+```js
+'use strict';
+
+function a () {
+  return this;
+}
+
+a() === undefined;  // true
+```
+]
+
+---
+
+.left-column[
+#### Outside of function
+#### Simple function call
+### Method call
+]
+
+.right-column[
+The value of the expression before the dot
+
+```js
+function a () {
+  return 'Ottawa JavaScript'
+}
+
+a().split(' ');  // ['Ottawa', 'JavaScript']
+```
+
+```js
+var b = {
+  bar: 3,
+  triple: function () {
+    return this.bar * 3;
+  }
+};
+
+b.triple()  // 9
+```
+]
+
+---
+
+.left-column[
+#### Outside of function
+#### Simple function call
+#### Method call
+### `fn.call` and `fn.apply`
+]
+
+.right-column[
+`this` is the first argument passed to `.call` or `.apply`
+
+```js
+var a = {
+  bar: 3
+};
+
+function barTriple() {
+  return this.bar * 3;
+}
+
+barTriple.call(a);  // 9
+barTriple.apply({ bar: 12 }});  // 36
+```
+]
+
+---
+
+.left-column[
+#### Outside of function
+#### Simple function call
+#### Method call
+### `fn.call` and `fn.apply`
+]
+
+.right-column[
+`this` is converted into an object
+
+```js
+function a () {
+  return this;
+}
+
+typeof a.call(12);  // 'object'
+```
+
+`null` and `undefined` get converted into the global object
+
+```js
+a.call(null) === window;  // true
+a.call(undefined) === window;  // true
+
+```
+]
+
+---
+.left-column[
+#### Outside of function
+#### Simple function call
+#### Method call
+### `fn.call` and `fn.apply`
+]
+
+.right-column[
+`this` is converted into an object
+
+```js
+function a () {
+  return this;
+}
+
+typeof a.call(12);  // 'object'
+```
+
+`null` and `undefined` get converted into the global object
+
+```js
+a.call(null) === window;  // true
+a.call(undefined) === window;  // true
+
+```
+
+... unless you are in strict mode
+```js
+function a () {
+  'use strict';
+  return this;
+}
+
+a.call(null) === null;  // true
+a.call(undefined) === undefined;  // true
+typeof a.call(12);  // 'number'
+
+```
+]
+---
+.left-column[
+#### Outside of function
+#### Simple function call
+#### Method call
+#### `fn.call` and `fn.apply`
+### `fn.bind`
+]
+
+.right-column[
+`fn.bind()` creates a new function with `this` *always* bound to a value
+
+```js
+function a () {
+  return this;
+}
+
+var b = a.bind({ foo: 1 });
+b().foo;  // 1
+b.call({ foo: 1000 });  // 1
+```
+
+The function returned shares the conversion rule of `fn.call` and `fn.apply`
+
+```js
+typeof a.bind(12)();  // 'object'
+a.bind(null)() === window;  // true
+```
+]
+---
+.left-column[
+#### Outside of function
+#### Simple function call
+#### Method call
+#### `fn.call` and `fn.apply`
+### `fn.bind`
+]
+
+.right-column[
+`fn.bind()` creates a new function with `this` *always* bound to a value
+
+```js
+function a () {
+  return this;
+}
+
+var b = a.bind({ foo: 1 });
+b().foo;  // 1
+b.call({ foo: 1000 });  // 1
+```
+
+The function returned shares the conversion rule of `fn.call` and `fn.apply`
+
+```js
+typeof a.bind(12)();  // 'object'
+a.bind(null)() === window;  // true
+```
+
+The new function has `"bound "` prepended to its name (new in ES2015)
+
+```js
+b.name;  // "bound a"
+```
+]
+---
+.left-column[
+#### Outside of function
+#### Simple function call
+#### Method call
+#### `fn.call` and `fn.apply`
+#### `fn.bind`
+### `Arrow functions`
+]
+
+.right-column[
+Always the `this` of the outer scope
+
+```js
+const a = () => this;
+a() === window;  // true
+a.call(122) === window;  // true
+```
+
+```js
+function b () {
+  return () => this;
+}
+
+b.call({ foo: 12 })();  // { foo: 12 }
+```
+]
+
+---
+
+.left-column[
+#### Outside of function
+#### Simple function call
+#### Method call
+#### `fn.call` and `fn.apply`
+#### `fn.bind`
+### `Arrow functions`
+]
+
+.right-column[
+Always the `this` of the outer scope
+
+```js
+const a = () => this;
+a() === window;  // true
+a.call(122) === window;  // true
+```
+
+```js
+function b () {
+  return () => this;
+}
+
+b.call({ foo: 12 })();  // { foo: 12 }
+```
+
+Compare above to:
+
+```js
+function b () {
+  return function () {
+    return this;
+  };
+}
+
+b.call({ foo: 12 })() === window;  // true
+```
+]
+???
+
+When you nest arrow functions, the engine would keep going to the outer scope
+until a scope that is not in a arrow function is found.
+---
+.left-column[
+#### Outside of function
+#### Simple function call
+#### Method call
+#### `fn.call` and `fn.apply`
+#### `fn.bind`
+#### `Arrow functions`
+### Other
+]
+
+.right-column[
+Same rules for generator functions
+
+```js
+function* a() {
+  'use strict';
+  yield this;
+}
+
+a().next().value === undefined;  // true
+```
+]
+
+---
+
+.left-column[
+#### Outside of function
+#### Simple function call
+#### Method call
+#### `fn.call` and `fn.apply`
+#### `fn.bind`
+#### `Arrow functions`
+### Other
+]
+
+.right-column[
+Same rules for generator functions
+
+```js
+function* a() {
+  'use strict';
+  yield this;
+}
+
+a().next().value === undefined;  // true
+```
+
+...and instance methods (they are just ordinary functions)
+
+```js
+class Foo {
+  bar() {
+    return this;
+  }
+}
+
+const a = new Foo();
+const bar = a.bar;
+bar() === window;  // true
+```
+]
+
+---
+
+# Factors that can affect the value of `this`
+
+.middle[
+- The type of the function (normal, bound, arrow)
+- How the function is called (simple call, method call, `.call` and `.apply`)
+- Whether the function is in strict mode
+]
+
+???
+
+It doesn't really matter if a function is part of an object literal or is an instance method,
+it's still an ordinary function
+
+---
+
+class: center, middle, inverse
+
+#`this` in APIs
+---
+
+.left-column[
+### DOM API
+]
+
+.right-column[
+By convention, `this` inside an event handler refers to the DOM element that
+triggered the event
+
+  .center[
+  <button>Tigger event!</button>
+  ]
+```js
+document.querySelector('button').
+  addEventListener('click', function () {
+    console.log(this);
+  });
+```
+]
+
+???
+
+quit out to click so grid can be shown
+
+---
+
+.left-column[
+#### DOM API
+### Ember
+]
+
+.right-column[
+Used in the router extensively
+
+```js
+Router.map(function () {
+  this.route('posts', function () {
+    this.route('new');
+  });
+
+  this.route('cats', function () {
+    this.route('kittens', function () {
+      this.route('list');
+    });
+  });
+});
+```
+]
+
+---
+
+.left-column[
+#### DOM API
+### Ember
+]
+
+.right-column[
+Used in the router extensively
+
+```js
+Router.map(function () {
+  this.route('posts', function () {
+    this.route('new');
+  });
+
+  this.route('cats', function () {
+    this.route('kittens', function () {
+      this.route('list');
+    });
+  });
+});
+```
+
+Also has it's own class system (moving towards native classes)
+
+```js
+Ember.component.extend({
+  tagName: 'p',
+  notice: 'Some text',
+
+  actions: {
+    changeText() {
+      this.set('notice', 'Some other text');
+    }
+  }
+});
+```
+]
+---
+
+.left-column[
+#### DOM API
+#### Ember
+### React
+]
+
+.right-column[
+It's class system automatically binds your functions to the instance
+
+```js
+const magic = React.createClass({
+  displayName: 'React bound',
+
+  to_be_bad_for_education() {
+
+  },
+
+  render() {
+    return React.createElement(
+      "p",
+      null,
+      this.to_be_bad_for_education.name
+    );
+  }
+});
+
+```
+
+<button id="react-run">Run</button>
+
+<div id="react-container"></div>
+]
+
+---
+
+class: center, middle, inverse
+
+#Thank you for your attention!
+
+Alan Wu
+
+    </textarea>
+    <script src="remark-0.12.min.js"></script>
+    <script type="text/javascript">
+      var slideshow = remark.create();
+      document.querySelector('button').addEventListener('click', function () {
+        console.log(this);
+      });
+
+      document.getElementById('react-run').addEventListener('click', function () {
+        const Magic = React.createClass({
+          displayName: 'React bound',
+
+          to_be_bad_for_beginners() {
+
+          },
+
+          render() {
+            return React.createElement(
+              "p",
+              null,
+              this.to_be_bad_for_beginners.name
+            );
+          }
+        });
+
+        ReactDOM.render(React.createElement(Magic),
+          document.getElementById('react-container'));
+      });
+
+    </script>
+  </body>
+</html>
